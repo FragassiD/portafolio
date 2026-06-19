@@ -1,0 +1,949 @@
+﻿/* ============================================================
+   Enoden Portfolio â€” styles.css
+   Pixel art 16-bit Â· Tren Enoden de Kamakura
+   ============================================================ */
+
+/* ---------- Reset / base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Paleta Enoden */
+  --enoden-green: #4a7c59;
+  --enoden-green-dk: #2f5840;
+  --cream: #f5e6c8;
+  --wood: #8b6f47;
+  --ink: #2a2320;
+
+  /* LÃ­neas de skills */
+  --line-backend: #0078c8;
+  --line-frontend: #e85298;
+  --line-ia: #00bb85;
+
+  /* Cielo (lo setea el JS por scroll) */
+  --sky-top: #ffd9a0;
+  --sky-bottom: #ff9e7a;
+  --accent: #ff9e7a;
+
+  --station-count: 7;
+  --pixel: 4px;
+}
+
+body {
+  margin: 0;
+  font-family: "VT323", monospace;
+  font-size: 20px;
+  color: var(--cream);
+  background: #10131c;
+  overflow-x: hidden;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  image-rendering: pixelated;
+}
+
+img, canvas { image-rendering: pixelated; }
+
+h1, h2, h3, .pixel { font-family: "Press Start 2P", monospace; line-height: 1.5; }
+.kanji { font-family: "DotGothic16", "VT323", sans-serif; }
+
+a { color: inherit; }
+/* defs SVG ocultas (filtro de pixelado) */
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* ============================================================
+   FONDOS (sky + far + ambient)
+   ============================================================ */
+.sky {
+  position: fixed; inset: 0; z-index: 0;
+  /* cielo en bandas duras (look pixel, sin filtro costoso) */
+  background: linear-gradient(180deg,
+    var(--sky-top) 0%, var(--sky-top) 22%,
+    color-mix(in srgb, var(--sky-top) 66%, var(--sky-bottom)) 22%,
+    color-mix(in srgb, var(--sky-top) 66%, var(--sky-bottom)) 44%,
+    color-mix(in srgb, var(--sky-top) 33%, var(--sky-bottom)) 44%,
+    color-mix(in srgb, var(--sky-top) 33%, var(--sky-bottom)) 66%,
+    var(--sky-bottom) 66%, var(--sky-bottom) 100%);
+  transition: background 0.15s linear;
+}
+.sky__stars {
+  position: absolute; inset: 0; opacity: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, #fff, transparent),
+    radial-gradient(1px 1px at 25% 60%, #fff, transparent),
+    radial-gradient(2px 2px at 40% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 55% 70%, #fff, transparent),
+    radial-gradient(1px 1px at 70% 25%, #fff, transparent),
+    radial-gradient(2px 2px at 80% 55%, #fff, transparent),
+    radial-gradient(1px 1px at 90% 15%, #fff, transparent),
+    radial-gradient(1px 1px at 33% 12%, #fff, transparent),
+    radial-gradient(1px 1px at 62% 45%, #fff, transparent);
+  transition: opacity 0.4s linear;
+}
+.sky__sun {
+  position: absolute; left: 8%; top: 10%;
+  width: 110px; height: 110px;
+  /* sol blocky (pasos duros en vez de degradado suave) */
+  background: radial-gradient(circle,
+    #fff7e0 0 30%, var(--accent) 30% 52%, color-mix(in srgb, var(--accent), #000 18%) 52% 66%, transparent 66%);
+  opacity: 0.85;
+  transition: opacity 0.4s linear, background 0.3s linear;
+  filter: saturate(1.1);
+}
+.sky__moon {
+  position: absolute; right: 10%; top: 8%;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 40%, #e8e4d0 0 42%, #d4d0bc 42% 100%);
+  box-shadow: 0 0 20px 6px rgba(230,226,200,0.35), inset -12px -6px 0 rgba(0,0,0,0.08);
+  opacity: 0;
+  transition: opacity 0.4s linear;
+}
+/* cráteres pixel */
+.sky__moon::before {
+  content: ''; position: absolute;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: rgba(0,0,0,0.08);
+  top: 22px; left: 28px;
+  box-shadow: 18px 14px 0 6px rgba(0,0,0,0.06), -8px 20px 0 3px rgba(0,0,0,0.07);
+}
+
+.far {
+  position: fixed; left: -20%; bottom: 0; z-index: 1;
+  width: 140%; height: 46vh; pointer-events: none;
+  background:
+    /* colinas pixeladas en capas */
+    linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.18) 100%),
+    radial-gradient(60% 90% at 18% 130%, #2c3b52 0 60%, transparent 61%),
+    radial-gradient(70% 95% at 52% 135%, #243349 0 60%, transparent 61%),
+    radial-gradient(65% 95% at 84% 132%, #1d2c40 0 60%, transparent 61%);
+  background-repeat: no-repeat;
+  opacity: 0.7;
+  will-change: transform;
+  filter: url(#pixelate);
+}
+
+.ambient {
+  position: fixed; inset: 0; z-index: 6;
+  pointer-events: none;
+}
+
+/* ============================================================
+   TOGGLE IDIOMA
+   ============================================================ */
+.lang-toggle {
+  position: fixed; top: 16px; right: 16px; z-index: 50;
+  display: flex; align-items: center; gap: 6px;
+  font-family: "Press Start 2P", monospace; font-size: 11px;
+  color: var(--cream); cursor: pointer;
+  background: var(--enoden-green-dk);
+  border: var(--pixel) solid var(--ink);
+  box-shadow: inset 0 0 0 2px var(--enoden-green), 4px 4px 0 rgba(0,0,0,0.4);
+  padding: 10px 12px;
+}
+.lang-toggle__opt { opacity: 0.45; padding: 2px; }
+.lang-toggle__opt.is-active { opacity: 1; color: #ffe9a8; text-shadow: 0 0 6px #ffcf5e; }
+.lang-toggle__sep { opacity: 0.5; }
+
+/* ============================================================
+   MAPA DE RUTA (sidebar)
+   ============================================================ */
+.route {
+  position: fixed; left: 12px; top: 50%; transform: translateY(-50%);
+  z-index: 40; width: auto;
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  backdrop-filter: none;
+}
+.route__title {
+  display: none;
+}
+.route__list { list-style: none; position: relative; }
+/* línea vertical de la ruta */
+.route__list::before {
+  content: ""; position: absolute; left: 5px; top: 4px; bottom: 4px;
+  width: 2px; background: rgba(255,255,255,0.15);
+}
+.route__item {
+  position: relative; display: flex; align-items: center; gap: 6px;
+  padding: 5px 0; cursor: pointer;
+  color: rgba(255,255,255,0.35); transition: color 0.2s;
+}
+.route__dot {
+  position: relative; z-index: 1; flex: 0 0 auto;
+  width: 10px; height: 10px; margin-left: 0;
+  background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3);
+  box-shadow: none;
+  border-radius: 0;
+  image-rendering: pixelated;
+}
+.route__label {
+  font-family: "VT323", monospace; font-size: 13px; line-height: 1;
+  opacity: 0; transition: opacity 0.2s;
+  white-space: nowrap; pointer-events: none;
+}
+.route__item:hover .route__label { opacity: 1; }
+.route__kanji { display: none; }
+.route__item:hover { color: #cfd8e4; }
+.route__item.is-visited { color: rgba(255,255,255,0.55); }
+.route__item.is-visited .route__dot { background: var(--enoden-green); border-color: var(--enoden-green); }
+.route__item.is-active { color: #fff; }
+.route__item.is-active .route__dot {
+  background: #ffd45e; border-color: #ffd45e;
+  box-shadow: 0 0 8px 2px rgba(255,212,94,0.5);
+  transform: scale(1.3);
+}
+.route__item.is-active .route__label { opacity: 1; }
+
+/* ============================================================
+   JOURNEY / WORLD (motor de scroll)
+   ============================================================ */
+.journey { position: relative; z-index: 5; }
+
+/* --- Modo horizontal (desktop) --- */
+body.mode-horizontal .journey__sticky {
+  position: sticky; top: 0; height: 100vh; overflow: hidden;
+}
+body.mode-horizontal .world { position: relative; height: 100vh; }
+body.mode-horizontal .stations {
+  display: flex; flex-direction: row; height: 100vh;
+  width: calc(var(--station-count) * 100vw);
+  will-change: transform;
+}
+body.mode-horizontal .station { flex: 0 0 100vw; height: 100vh; }
+
+/* --- Modo vertical (mobile) --- */
+body.mode-vertical .journey__sticky { position: static; }
+body.mode-vertical .world { position: relative; }
+body.mode-vertical .stations { display: flex; flex-direction: column; }
+body.mode-vertical .station { width: 100%; min-height: 100vh; }
+
+/* ---------- EstaciÃ³n ---------- */
+.station {
+  position: relative; overflow: hidden;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 6vh;
+}
+.station__scene { position: absolute; inset: 0; z-index: 1; pointer-events: none; filter: url(#pixelate); }
+
+/* capa de carteles de estaciÃ³n â€” NÃTIDA (no se pixela) */
+.station__signs { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+
+/* accesibilidad / performance: sin filtro de pixelado */
+@media (prefers-reduced-motion: reduce) {
+  .far, .station__scene { filter: none; }
+}
+
+/* suelo / andÃ©n */
+.station__ground {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 14%;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.12) 0 18px, transparent 18px 36px),
+    linear-gradient(180deg, #3a2e22 0%, #241c14 100%);
+  border-top: var(--pixel) solid #5a4634;
+  z-index: 2;
+}
+.station__ground::after { /* borde del andÃ©n */
+  content: ""; position: absolute; left: 0; right: 0; top: -10px; height: 10px;
+  background: repeating-linear-gradient(90deg, #c8b48a 0 22px, #9c8460 22px 44px);
+}
+/* plataforma de estación (marcador visual) */
+.station-platform {
+  position: absolute; left: 50%; bottom: 14%; z-index: 3;
+  transform: translateX(-50%);
+  width: 200px; height: 70px;
+}
+/* BAPRO (sunset): plataforma a la derecha para no solaparse con el panel */
+.station[data-theme="sunset"] .station-platform {
+  left: auto; right: 8%; transform: none;
+}
+/* techo de la estación */
+.station-platform__roof {
+  position: absolute; top: 0; left: -10px; right: -10px; height: 10px;
+  background: #5a4634; border: 3px solid #3a2a1a;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+}
+/* pilares */
+.station-platform__pillar {
+  position: absolute; bottom: 0; width: 8px; height: 50px;
+  background: #8a7a60; border: 2px solid #5a4634;
+}
+.station-platform__pillar:first-of-type { left: 8px; }
+.station-platform__pillar:nth-of-type(2) { right: 8px; }
+/* cartel de nombre */
+.station-platform__sign {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  background: #f7f4ec; border: 3px solid #20242c;
+  padding: 3px 10px; white-space: nowrap;
+  font-family: "Press Start 2P", monospace; font-size: 6px;
+  color: #20242c; text-align: center; line-height: 1.4;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+}
+.station-platform__sign .kanji {
+  font-family: "DotGothic16", sans-serif; font-size: 12px;
+  display: block; color: #c2362f;
+}
+/* banco de la estación */
+.station-platform__bench {
+  position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+  width: 30px; height: 10px; background: #6b5a44;
+  border: 2px solid #3a2a1a; border-radius: 2px 2px 0 0;
+}
+/* ============================================================
+   PANEL DE INFORMACIÃ“N
+   ============================================================ */
+.panel {
+  position: relative; z-index: 10;
+  width: min(560px, 86vw);
+  background: #f7f4ec; color: #20242c;
+  border: var(--pixel) solid #20242c;
+  box-shadow: inset 0 0 0 2px #c9c2ad, 8px 8px 0 rgba(0,0,0,0.45);
+  padding: 22px 24px 24px;
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.station.is-active .panel { opacity: 1; transform: translateY(0); }
+
+.panel__head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 3px solid #20242c; padding-bottom: 10px; margin-bottom: 12px; }
+.panel__kanji { font-family: "DotGothic16", sans-serif; font-size: 30px; color: #c2362f; }
+.panel__name { font-family: "Press Start 2P", monospace; font-size: 14px; color: #20242c; }
+.panel__meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 18px; color: #4a4f59; margin-bottom: 12px; }
+.panel__meta b { color: #20242c; font-weight: 400; }
+.panel__meta .lbl { font-family: "Press Start 2P", monospace; font-size: 8px; color: #8a6d2f; margin-right: 4px; letter-spacing: 1px; }
+.panel__desc { font-size: 19px; line-height: 1.45; color: #2b2f38; margin-bottom: 14px; }
+
+.panel__newline {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: "Press Start 2P", monospace; font-size: 8px;
+  padding: 6px 8px; margin-bottom: 12px; color: #fff;
+  border: 2px solid rgba(0,0,0,0.3);
+}
+.panel__newline::before { content: ""; width: 14px; height: 6px; background: #fff; box-shadow: 0 0 6px #fff; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 7px; }
+.tag {
+  font-family: "VT323", monospace; font-size: 16px; line-height: 1;
+  padding: 6px 9px; color: #fff; border: 2px solid rgba(0,0,0,0.28);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.25);
+}
+.tag[data-line="backend"] { background: var(--line-backend); }
+.tag[data-line="frontend"] { background: var(--line-frontend); }
+.tag[data-line="ia"] { background: var(--line-ia); }
+
+.projects { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.proj-btn {
+  font-family: "Press Start 2P", monospace; font-size: 8px;
+  padding: 9px 10px; background: #20242c; color: #f7f4ec;
+  border: 2px solid #000; box-shadow: 3px 3px 0 rgba(0,0,0,0.35);
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.proj-btn small { font-family: "VT323"; font-size: 13px; opacity: 0.7; }
+
+/* CTA contacto */
+.contact { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.contact a {
+  font-family: "Press Start 2P", monospace; font-size: 9px; text-decoration: none;
+  padding: 11px 14px; color: #fff; border: 3px solid #000;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.4); transition: transform 0.12s;
+}
+.contact a:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 rgba(0,0,0,0.4); }
+.contact .c-linkedin { background: #0a66c2; }
+.contact .c-email { background: var(--enoden-green); }
+
+/* ============================================================
+   HEADER (estaciÃ³n 0)
+   ============================================================ */
+.hero { position: relative; z-index: 10; text-align: center; padding: 20px; }
+.hero__name {
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(20px, 5vw, 48px); color: #fff;
+  text-shadow: 4px 4px 0 #c2362f, 8px 8px 0 rgba(0,0,0,0.35);
+  line-height: 1.35; margin-bottom: 18px;
+}
+.hero__photo {
+  display: block; margin: 0 auto 18px;
+  width: clamp(80px, 18vw, 160px); height: clamp(80px, 18vw, 160px);
+  border-radius: 50%; object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.35);
+}
+.hero__role {
+  font-family: "Press Start 2P", monospace; font-size: clamp(10px, 2vw, 16px);
+  color: #20242c; background: var(--cream);
+  display: inline-block; padding: 10px 16px;
+  border: var(--pixel) solid #20242c; box-shadow: 5px 5px 0 rgba(0,0,0,0.4);
+}
+
+/* ============================================================
+   TREN ENODEN — pixel art puro CSS (sin PNG)
+   ============================================================ */
+.train {
+  position: absolute; z-index: 6; bottom: 28px;
+  left: 0;
+  display: flex; align-items: flex-end;
+  height: 110px;
+  animation: trainBob 1.6s steps(2) infinite;
+  filter: drop-shadow(0 4px 0 rgba(0,0,0,0.35));
+  will-change: transform;
+  transition: none;
+}
+body.mode-vertical .train {
+  position: fixed; bottom: 6px; left: 50%; z-index: 30;
+  transform: translateX(-50%); height: 80px;
+}
+@keyframes trainBob { 0%,100% { margin-bottom: 0; } 50% { margin-bottom: 2px; } }
+
+/* vagón base (cuerpo Enoden) */
+.wagon {
+  position: relative; flex: 0 0 auto;
+  width: 140px; height: 90px;
+  margin-left: 8px;
+  animation: wagonIn 0.5s ease both;
+}
+.wagon:first-child { margin-left: 0; }
+
+/* cuerpo del vagón */
+.wagon__body {
+  position: absolute; bottom: 12px; left: 6px; right: 6px; top: 6px;
+  background: var(--enoden-green);
+  border: 4px solid var(--enoden-green-dk);
+  border-radius: 4px 4px 0 0;
+  image-rendering: pixelated;
+}
+/* franja crema (estilo Enoden clásico) */
+.wagon__body::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 8px; height: 8px;
+  background: var(--cream); border-top: 3px solid #d4c9a8; border-bottom: 3px solid #d4c9a8;
+}
+/* ventanas */
+.wagon__body::after {
+  content: ""; position: absolute; left: 8px; right: 8px; top: 8px; height: 18px;
+  background: repeating-linear-gradient(90deg,
+    #8bcbff 0 14px, var(--enoden-green-dk) 14px 18px);
+  border: 3px solid var(--enoden-green-dk);
+}
+/* ruedas */
+.wagon__wheels {
+  position: absolute; bottom: 0; left: 14px; right: 14px; height: 14px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+}
+.wagon__wheels::before, .wagon__wheels::after {
+  content: ""; width: 14px; height: 14px;
+  background: #2a2320; border: 3px solid #1a1610; border-radius: 3px;
+}
+/* techo */
+.wagon__roof {
+  position: absolute; top: 0; left: 3px; right: 3px; height: 8px;
+  background: #6b8870; border: 3px solid var(--enoden-green-dk);
+  border-radius: 4px 4px 0 0;
+}
+
+/* enganche pixel entre vagones */
+.wagon + .wagon::before {
+  content: ""; position: absolute; left: -12px; bottom: 20px;
+  width: 14px; height: 5px; background: #3a3228; z-index: 1;
+}
+
+/* locomotora: más detalle */
+.wagon.is-engine .wagon__body {
+  border-radius: 4px 10px 0 0;
+}
+.wagon.is-engine .wagon__body::after {
+  right: 6px;
+  background: repeating-linear-gradient(90deg,
+    #8bcbff 0 20px, var(--enoden-green-dk) 20px 24px);
+}
+/* faro */
+.wagon.is-engine .wagon__head {
+  position: absolute; right: 8px; bottom: 22px; width: 12px; height: 12px; z-index: 4;
+  background: #fff7c8; border-radius: 50%;
+  box-shadow: 0 0 14px 4px #ffe07a;
+  animation: headBeam 2.4s ease-in-out infinite;
+}
+/* pantógrafo */
+.wagon.is-engine .wagon__panto {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  width: 3px; height: 12px; background: #2a2320;
+}
+.wagon.is-engine .wagon__panto::before {
+  content: ""; position: absolute; top: -3px; left: -8px;
+  width: 20px; height: 3px; background: #2a2320;
+}
+
+@keyframes headBeam { 0%,100% { box-shadow: 0 0 8px 2px #ffe07a; } 50% { box-shadow: 0 0 14px 5px #fff0a8; } }
+
+/* etiqueta sobre el cuerpo del vagón */
+.wagon__flag {
+  position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+  font-family: "Press Start 2P", monospace; font-size: 7px; line-height: 1;
+  color: #fff; padding: 3px 5px; white-space: nowrap; z-index: 5;
+  background: rgba(0,0,0,0.45);
+  border: 2px solid rgba(255,255,255,0.25);
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.7);
+  pointer-events: none;
+}
+.wagon__flag::after { display: none; }
+/* tira de color en el techo del vagón */
+.wagon__band {
+  position: absolute; left: 16px; right: 16px; top: 8px; height: 4px; z-index: 3;
+}
+
+@keyframes wagonIn { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .train, .wagon, .wagon.is-engine .wagon__head { animation: none; }
+}
+
+/* ============================================================
+   VÃA DEL TREN (una sola, baja, con durmientes)
+   ============================================================ */
+.rails { position: absolute; left: 0; bottom: 0; z-index: 1; pointer-events: none; height: 28px; }
+body.mode-horizontal .rails { width: 100vw; }
+body.mode-vertical .rails { display: none; }
+/* balasto (gravilla) */
+.track-ballast {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 28px;
+  background: linear-gradient(180deg, #4a4038 0%, #3a3228 100%);
+  border-top: 3px solid #5a5046;
+}
+/* durmientes */
+.track-ties {
+  position: absolute; left: 0; right: 0; bottom: 4px; height: 16px;
+  background: repeating-linear-gradient(90deg, #6b5a44 0 14px, transparent 14px 36px);
+}
+/* dos rieles metálicos */
+.track-rail {
+  position: absolute; left: 0; right: 0; height: 5px;
+  background: #9aa0aa; box-shadow: inset 0 1px 0 #bbb, 0 2px 4px rgba(0,0,0,0.5);
+}
+.track-rail.top { bottom: 18px; }
+.track-rail.bottom { bottom: 6px; }
+
+/* ============================================================
+   ESCENOGRAFÃA POR TEMA (pixel art CSS)
+   ============================================================ */
+/* edificio genÃ©rico */
+.bldg { position: absolute; bottom: 14%; background: #2b3240; border: var(--pixel) solid #161b25; }
+.bldg .win { position: absolute; width: 10px; height: 12px; background: #ffd45e; box-shadow: 0 0 6px #ffcf5e; }
+.bldg .win.off { background: #3a4252; box-shadow: none; }
+.bldg .win.twinkle { animation: wflicker 3s steps(1) infinite; }
+.bldg .win.twinkle-cold { animation: wflicker-cold 4s steps(1) infinite; }
+.bldg .win.twinkle-warm { animation: wflicker-warm 3.5s steps(1) infinite; }
+@keyframes wflicker {
+  0%,60% { background: #ffd45e; box-shadow: 0 0 6px #ffcf5e; }
+  30%,90% { background: #a0d4ff; box-shadow: 0 0 6px #80c0ff; }
+  45% { background: #3a4252; box-shadow: none; }
+}
+@keyframes wflicker-cold {
+  0%,50% { background: #a0d4ff; box-shadow: 0 0 6px #80c0ff; }
+  25%,75% { background: #ffd45e; box-shadow: 0 0 6px #ffcf5e; }
+  40% { background: #e0f0ff; box-shadow: 0 0 8px #b0e0ff; }
+}
+@keyframes wflicker-warm {
+  0%,40% { background: #ffd45e; box-shadow: 0 0 6px #ffcf5e; }
+  20% { background: #ffaa30; box-shadow: 0 0 6px #ff9a20; }
+  60%,80% { background: #ffe8a0; box-shadow: 0 0 4px #ffd45e; }
+  70% { background: #3a4252; box-shadow: none; }
+}
+
+/* --- dawn (cerezos / sakura) --- */
+.tree { position: absolute; bottom: 14%; width: 90px; height: 180px; transform-origin: bottom center; }
+/* tronco */
+.tree::before {
+  content: ""; position: absolute; bottom: 0; left: 50%; width: 16px; height: 70px;
+  background: #6b4a2f; border: 3px solid #3f2b1b; transform: translateX(-50%) skewX(-2deg);
+}
+/* copa */
+.tree::after {
+  content: ""; position: absolute; bottom: 60px; left: 50%; width: 110px; height: 100px; transform: translateX(-50%);
+  background: radial-gradient(circle at 30% 30%, #ffc3dd 0 30%, transparent 31%), radial-gradient(circle at 70% 35%, #ffb0d2 0 32%, transparent 33%), radial-gradient(circle at 50% 70%, #ff9ec7 0 38%, transparent 39%);
+  border-radius: 45% 55% 50% 48%;
+}
+/* sakura variant: copas grandes, irregulares, con múltiples "nubes" de flores */
+.tree.sakura::after {
+  width: 140px; height: 120px; bottom: 55px;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 30%, #ffadd6 0 45%, transparent 46%),
+    radial-gradient(ellipse 55% 65% at 80% 25%, #ff8ec4 0 42%, transparent 43%),
+    radial-gradient(ellipse 70% 55% at 50% 70%, #ff6eb4 0 48%, transparent 49%),
+    radial-gradient(ellipse 45% 40% at 35% 50%, #ffc3e0 0 40%, transparent 41%),
+    radial-gradient(ellipse 50% 60% at 65% 55%, #ff9ed0 0 44%, transparent 45%),
+    radial-gradient(ellipse 40% 35% at 15% 60%, #ffb8d8 0 38%, transparent 39%),
+    radial-gradient(ellipse 38% 45% at 85% 65%, #ffa0c8 0 36%, transparent 37%);
+  border-radius: 40% 58% 45% 52% / 50% 42% 56% 48%;
+}
+/* variantes de forma para romper repetición */
+.tree.sakura:nth-child(odd)::after {
+  border-radius: 52% 44% 56% 40% / 45% 55% 42% 58%;
+  width: 150px; height: 115px;
+}
+.tree.sakura:nth-child(3n)::after {
+  border-radius: 48% 52% 40% 60% / 55% 40% 58% 44%;
+  width: 130px; height: 130px; bottom: 50px;
+}
+.tree.sakura:nth-child(3n)::before {
+  transform: translateX(-50%) skewX(3deg);
+}
+/* pétalos cayendo */
+.petal {
+  position: absolute; width: 8px; height: 8px;
+  background: #ffc3dd; border-radius: 50% 0 50% 50%;
+  opacity: 0.9;
+  animation: petalFall 5s ease-in-out infinite;
+}
+.petal:nth-child(odd) { background: #ff9ec7; width: 6px; height: 6px; }
+@keyframes petalFall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0.9; }
+  50% { transform: translate(20px, 120px) rotate(180deg); opacity: 0.7; }
+  100% { transform: translate(-10px, 260px) rotate(360deg); opacity: 0; }
+}
+
+/* --- neon (Akihabara) --- */
+.neon-sign {
+  position: absolute; font-family: "DotGothic16", sans-serif;
+  padding: 6px 10px; border: 3px solid currentColor; border-radius: 4px;
+  text-shadow: 0 0 8px currentColor; box-shadow: 0 0 12px currentColor, inset 0 0 8px currentColor;
+  animation: neonFlick 3.4s steps(1) infinite;
+}
+@keyframes neonFlick { 0%,97%,100% { opacity: 1; } 98% { opacity: 0.55; } }
+.clock {
+  position: absolute; top: 14%; right: 12%; background: #11161f; color: #ff5a5a;
+  font-family: "Press Start 2P"; font-size: 12px; padding: 8px 10px; border: 3px solid #2a3340;
+  box-shadow: 0 0 10px rgba(255,80,80,0.4);
+}
+.board {
+  position: absolute; background: #0d1b12; border: var(--pixel) solid #1d3325;
+  color: #66ff9e; font-family: "VT323"; font-size: 12px; padding: 8px; line-height: 1.1;
+  box-shadow: inset 0 0 12px rgba(0,255,128,0.15);
+}
+
+/* --- datacenter (servers) --- */
+.rack { position: absolute; bottom: 14%; width: 54px; height: 150px; background: #14202f; border: var(--pixel) solid #0a1018; }
+.rack .led { position: absolute; right: 6px; width: 6px; height: 6px; background: #2bd4ff; box-shadow: 0 0 6px #2bd4ff; animation: blink 1.2s steps(2) infinite; }
+.rack .slot { position: absolute; left: 6px; right: 16px; height: 8px; background: #243648; }
+@keyframes blink { 50% { opacity: 0.25; } }
+.cube {
+  position: absolute; width: 34px; height: 34px; background: rgba(43,212,255,0.18);
+  border: 2px solid #2bd4ff; box-shadow: 0 0 12px rgba(43,212,255,0.6);
+  animation: float 4s ease-in-out infinite;
+}
+@keyframes float { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-14px) rotate(8deg); } }
+
+/* --- startup (oil + ci/cd) --- */
+.tower { position: absolute; bottom: 14%; width: 70px; height: 180px; }
+.tower .leg { position: absolute; bottom: 0; width: 6px; height: 150px; background: #6b6256; }
+.tower .leg.l { left: 6px; transform: skewX(12deg); } .tower .leg.r { right: 6px; transform: skewX(-12deg); }
+.tower .top { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 30px; height: 40px; background: #8a8175; border: 3px solid #4a443b; }
+.conveyor {
+  position: absolute; bottom: 24%; height: 18px; background: #3a3f4a;
+  border: 3px solid #20242c; overflow: hidden;
+}
+.conveyor::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, #ffd45e 0 10px, transparent 10px 26px); animation: belt 1.2s linear infinite; }
+@keyframes belt { to { transform: translateX(-26px); } }
+
+/* --- sunset (banco + robot) --- */
+.robot { position: absolute; bottom: 14%; width: 40px; height: 54px; }
+.robot .head { position: absolute; top: 0; left: 4px; width: 32px; height: 24px; background: #c7d2dc; border: 3px solid #2a3340; border-radius: 4px; }
+.robot .head .eye { position: absolute; top: 9px; width: 6px; height: 6px; background: var(--line-ia); box-shadow: 0 0 6px var(--line-ia); animation: blink 2s steps(2) infinite; }
+.robot .body { position: absolute; bottom: 0; left: 8px; width: 24px; height: 28px; background: #9fb0bd; border: 3px solid #2a3340; }
+
+/* --- garage (escritorio + gato) --- */
+.desk { position: absolute; bottom: 14%; width: 160px; height: 14px; background: #5a3f2a; border: 3px solid #2f2014; }
+.monitor { position: absolute; width: 46px; height: 34px; background: #0d1b12; border: 4px solid #2a2320; box-shadow: 0 0 10px rgba(102,255,158,0.3); }
+.monitor::after { content: ""; position: absolute; inset: 4px; background: repeating-linear-gradient(180deg, #66ff9e 0 2px, transparent 2px 6px); opacity: 0.6; }
+.coffee { position: absolute; width: 16px; height: 16px; background: #c9b59a; border: 3px solid #2f2014; }
+.coffee::before { content:""; position:absolute; right:-8px; top:3px; width:8px; height:8px; border:3px solid #2f2014; border-left:none; border-radius:0 6px 6px 0; }
+
+/* gato pixel (escondido en varias estaciones) */
+.cat { position: absolute; width: 34px; height: 24px; z-index: 4; }
+.cat .b { position: absolute; bottom: 0; left: 2px; width: 30px; height: 14px; background: #2a2320; border-radius: 8px 8px 4px 4px; }
+.cat .h { position: absolute; bottom: 8px; left: 0; width: 14px; height: 12px; background: #2a2320; border-radius: 6px 6px 0 0; }
+.cat .h::before, .cat .h::after { content:""; position:absolute; top:-4px; border:5px solid transparent; border-bottom-color:#2a2320; }
+.cat .h::before { left: 1px; } .cat .h::after { right: 1px; }
+.cat .t { position: absolute; bottom: 4px; right: -6px; width: 12px; height: 6px; background: #2a2320; border-radius: 4px; }
+.cat .eye { position: absolute; bottom: 12px; left: 3px; width: 4px; height: 4px; background: #ffd45e; box-shadow: 8px 0 0 #ffd45e; animation: blink 3s steps(2) infinite; }
+
+/* --- future (mar + cohete) --- */
+.sea {
+  position: absolute; left: 0; right: 0; bottom: 14%; height: 14%;
+  background: linear-gradient(180deg, #16486e, #0c2c47);
+  overflow: hidden;
+}
+.sea::after { content:""; position:absolute; inset:0; background: repeating-linear-gradient(180deg, rgba(255,255,255,0.12) 0 2px, transparent 2px 9px); animation: wave 3s linear infinite; }
+@keyframes wave { to { transform: translateX(-9px); } }
+.rocket { position: absolute; width: 26px; height: 60px; }
+.rocket .nose { position: absolute; top: 0; left: 5px; width: 16px; height: 22px; background: #e8e0d0; border-radius: 50% 50% 0 0; border: 3px solid #2a2320; }
+.rocket .fin { position: absolute; bottom: 8px; width: 8px; height: 16px; background: #c2362f; }
+.rocket .fin.l { left: -4px; transform: skewY(20deg); } .rocket .fin.r { right: -4px; transform: skewY(-20deg); }
+.rocket .body { position: absolute; bottom: 8px; left: 5px; width: 16px; height: 34px; background: #e8e0d0; border: 3px solid #2a2320; }
+.rocket .flame { position: absolute; bottom: -10px; left: 8px; width: 10px; height: 16px; background: #ffb14e; border-radius: 0 0 50% 50%; box-shadow: 0 0 12px #ff8a3c; animation: flame 0.3s steps(2) infinite; }
+@keyframes flame { 50% { height: 22px; opacity: 0.8; } }
+
+/* personas esperando (siluetas) */
+.person { position: absolute; bottom: 14%; width: 14px; height: 34px; background: #1c2230; border-radius: 6px 6px 2px 2px; opacity: 0.85; }
+.person::before { content:""; position:absolute; top:-10px; left:2px; width:10px; height:10px; border-radius:50%; background:#1c2230; }
+
+/* ============================================================
+   ESCENOGRAFÃA â€” capas de detalle adicionales
+   ============================================================ */
+/* skyline lejano (silueta de edificios) */
+.skyline-layer { position: absolute; left: 0; right: 0; bottom: 13%; height: 56%; z-index: 0; pointer-events: none; }
+.sky-bldg { position: absolute; bottom: 0; border-top: 2px solid rgba(255,255,255,0.06); box-shadow: inset 2px 0 0 rgba(255,255,255,0.04); }
+.lw { position: absolute; width: 4px; height: 5px; background: #ffd45e; box-shadow: 0 0 4px #ffcf5e; opacity: 0.8; }
+
+/* ventanas mÃ¡s nÃ­tidas */
+.bldg .win { width: 9px; height: 10px; }
+
+/* unidad de aire acondicionado en fachada */
+.acunit { position: absolute; width: 16px; height: 11px; background: #303a4c; border: 2px solid #0f141d; box-shadow: inset 0 0 0 2px #3f4b60; }
+/* cartel de azotea (luz de color) */
+.rooftop { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 60%; height: 7px; box-shadow: 0 0 10px currentColor; opacity: 0.9; }
+
+/* cartel neÃ³n vertical (izakaya / karaoke) */
+.vsign {
+  position: absolute; writing-mode: vertical-rl; font-family: "DotGothic16", sans-serif;
+  font-size: 18px; letter-spacing: 3px; padding: 8px 6px; color: inherit;
+  background: rgba(8,8,18,0.55); border: 3px solid currentColor; border-radius: 3px;
+  text-shadow: 0 0 8px currentColor;
+  box-shadow: 0 0 14px currentColor, inset 0 0 8px currentColor;
+  animation: neonFlick 3.6s steps(1) infinite;
+}
+
+/* farolillo rojo japonÃ©s (æç¯) */
+.lantern {
+  position: absolute; width: 24px; height: 32px;
+  background: radial-gradient(circle at 50% 38%, #ff6b5e 0 55%, #c2362f 56%);
+  border: 3px solid #7a1d18; border-radius: 50% / 42%;
+  box-shadow: 0 0 14px rgba(255,90,70,0.7);
+  animation: sway 3.2s ease-in-out infinite; transform-origin: top center;
+}
+.lantern::before { content:""; position:absolute; left:0; right:0; top:44%; height:3px; background:rgba(0,0,0,0.35); box-shadow:0 -8px 0 rgba(0,0,0,0.3), 0 8px 0 rgba(0,0,0,0.3); }
+.lantern::after { content:""; position:absolute; left:50%; top:-9px; width:3px; height:9px; background:#222; transform:translateX(-50%); }
+@keyframes sway { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+
+/* cartel de estaciÃ³n japonÃ©s */
+.jsign {
+  position: absolute; background: #f4f1e8; border: var(--pixel) solid #2a3a2f;
+  box-shadow: 0 0 0 3px #6fae8a, 4px 4px 0 rgba(0,0,0,0.4);
+  padding: 7px 14px; text-align: center; z-index: 2;
+}
+.jsign .big { font-family: "DotGothic16", sans-serif; font-size: 20px; color: #1d3b2a; display: block; }
+.jsign .rom { font-family: "Press Start 2P", monospace; font-size: 7px; color: #3a7a55; display: block; margin-top: 5px; letter-spacing: 1px; }
+.jsign .arrows { font-family: "DotGothic16", sans-serif; font-size: 11px; color: #7a8a80; display: block; margin-top: 3px; }
+.neon-jsign { box-shadow: 0 0 0 3px #6fae8a, 0 0 16px rgba(111,174,138,0.6), 4px 4px 0 rgba(0,0,0,0.4); }
+
+/* mÃ¡quina expendedora */
+.vending { position: absolute; bottom: 14%; width: 44px; height: 74px; background: #1a6fc4; border: 3px solid #0d3a6b; box-shadow: 0 0 16px rgba(43,160,255,0.45); }
+.vending::before { content:""; position:absolute; left:5px; top:6px; right:5px; height:30px; background:linear-gradient(180deg,#cdeeff,#6db8e6); border:2px solid #0d3a6b; }
+.vending::after { content:""; position:absolute; left:7px; bottom:9px; width:9px; height:13px; background:#ffd45e; box-shadow:13px 0 0 #ff6b6b, 0 -17px 0 #66ff9e, 13px -17px 0 #b06bff; }
+
+/* farola de calle */
+.lamp { position: absolute; bottom: 14%; width: 6px; height: 116px; background: #2a2f3a; }
+.lamp::before { content:""; position:absolute; top:-6px; left:-8px; width:22px; height:8px; background:#3a414f; border-radius:3px; }
+.lamp::after { content:""; position:absolute; top:-2px; left:-7px; width:20px; height:14px; background:radial-gradient(circle,#fff3b0 0 40%,transparent 70%); box-shadow:0 0 22px 7px #ffe07a; }
+
+/* pajaritos (amanecer) */
+.bird { position: absolute; width: 12px; height: 6px; opacity: 0.7;
+  background: radial-gradient(circle at 0 100%, transparent 60%, #3a3340 61%), radial-gradient(circle at 100% 100%, transparent 60%, #3a3340 61%);
+  animation: flap 0.6s steps(2) infinite, drift 9s linear infinite; }
+@keyframes flap { 50% { transform: scaleY(0.6); } }
+@keyframes drift { from { margin-left: 0; } to { margin-left: 40px; } }
+
+/* tuberÃ­as del data center */
+.pipe { position: absolute; bottom: 50%; height: 8px; background: repeating-linear-gradient(90deg,#2a4256 0 14px,#1d3142 14px 16px); border:2px solid #0c1622; box-shadow:0 0 8px rgba(43,212,255,0.25); }
+
+/* nubes pixeladas */
+.cloud { position: absolute; width: 70px; height: 22px; background: #fff; border-radius: 14px; opacity: 0.85;
+  box-shadow: 18px -10px 0 6px #fff, 40px 0 0 0 #fff, -6px 0 0 0 #fff; animation: drift 30s linear infinite; }
+
+/* engranajes CI/CD */
+.gear { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: #ffd45e; border: 4px solid #20242c;
+  box-shadow: 0 0 0 3px #ffd45e, 0 0 0 6px #20242c; animation: spin 3s linear infinite; }
+.gear::after { content:""; position:absolute; inset:7px; background:#20242c; border-radius:50%; }
+
+/* viga de la torre petrolera */
+.tower .beam { position: absolute; bottom: 80px; left: 6px; right: 6px; height: 5px; background: #6b6256; transform: rotate(-6deg); }
+
+/* logo banco */
+.bank-logo { position: absolute; font-family: "Press Start 2P", monospace; font-size: 9px; color: #ffe9a8; text-shadow: 0 0 8px #ffcf5e, 2px 2px 0 #7a5a1a; }
+/* mini dashboard banco */
+.dash { position: absolute; width: 60px; height: 40px; background: #0d1b2a; border: 3px solid #1d3350; box-shadow: 0 0 12px rgba(43,160,255,0.4); }
+.dash::before { content:""; position:absolute; left:5px; bottom:5px; width:8px; height:14px; background:#2bd4ff; box-shadow:12px 0 0 0 #66ff9e, 24px 4px 0 0 #ffd45e; }
+.dash::after { content:""; position:absolute; left:5px; top:5px; right:5px; height:4px; background:#2bd4ff; opacity:0.5; }
+/* antena del robot */
+.robot .antenna { position: absolute; top: -8px; left: 50%; width: 2px; height: 8px; background: #2a3340; transform: translateX(-50%); }
+.robot .antenna::after { content:""; position:absolute; top:-5px; left:-2px; width:6px; height:6px; border-radius:50%; background:var(--line-ia); box-shadow:0 0 8px var(--line-ia); }
+
+/* garage: ventana nocturna, pÃ³ster, lÃ¡mpara, planta */
+.window-night { position: absolute; width: 54px; height: 44px; background: linear-gradient(180deg,#10204a,#1d3a6b); border: 4px solid #2f2014; box-shadow: inset 0 0 0 2px #5a3f2a; }
+.window-night::after { content:""; position:absolute; inset:0; background: radial-gradient(1px 1px at 20% 30%,#fff,transparent), radial-gradient(1px 1px at 60% 50%,#fff,transparent), radial-gradient(1px 1px at 80% 20%,#fff,transparent); }
+.poster { position: absolute; width: 40px; height: 52px; background: #b03a55; border: 4px solid #2f2014; font-family: "DotGothic16",sans-serif; font-size: 20px; color: #ffe9a8; text-align: center; line-height: 52px; }
+.lampdesk { position: absolute; width: 8px; height: 40px; background: #2f2014; }
+.lampdesk::before { content:""; position:absolute; top:-8px; left:-8px; width:24px; height:12px; background:#caa35a; border-radius:10px 10px 0 0; box-shadow:0 12px 26px 8px rgba(255,200,120,0.45); }
+.plant { position: absolute; bottom: 14%; width: 16px; height: 26px; background: #5a3f2a; border:3px solid #2f2014; }
+.plant::before { content:""; position:absolute; top:-22px; left:-6px; width:28px; height:26px; background: radial-gradient(circle at 30% 60%,#3f8c4f 0 40%,transparent 41%), radial-gradient(circle at 70% 50%,#357a44 0 42%,transparent 43%); }
+
+/* luna (futuro) */
+.moon { position: absolute; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 35% 35%,#fff7e0,#dfe7f5 70%); box-shadow: 0 0 30px rgba(223,231,245,0.5); }
+.moon::after { content:""; position:absolute; top:14px; left:18px; width:10px; height:10px; border-radius:50%; background:rgba(160,170,190,0.5); box-shadow:14px 10px 0 -2px rgba(160,170,190,0.4); }
+
+/* gato dormido (garage) */
+.cat.sleep .eye { display: none; }
+.cat.sleep .zzz { position: absolute; top: -14px; right: -10px; font-family: "DotGothic16",sans-serif; font-size: 12px; color: #cdd6e2; animation: zfloat 2.4s ease-in-out infinite; }
+@keyframes zfloat { 0%,100% { transform: translateY(0); opacity: 0.4; } 50% { transform: translateY(-6px); opacity: 1; } }
+
+/* biblioteca (garage/propios) */
+.bookshelf {
+  position: absolute; bottom: 14%; width: 100px; height: 80px;
+  background: #3d2816; border: 3px solid #2a1a0e;
+  box-shadow: inset 0 0 0 2px #5a3f2a;
+}
+.bookshelf::before {
+  content: ""; position: absolute; inset: 4px;
+  background:
+    linear-gradient(180deg,
+      transparent 0, transparent 22px, #2a1a0e 22px, #2a1a0e 24px,
+      transparent 24px, transparent 48px, #2a1a0e 48px, #2a1a0e 50px,
+      transparent 50px);
+}
+.bookshelf::after {
+  content: ""; position: absolute; left: 6px; right: 6px; top: 5px; bottom: 6px;
+  background:
+    linear-gradient(90deg, #c2362f 0 7px, #2266aa 7px 15px, #44aa66 15px 21px, #aa6622 21px 29px, #6644aa 29px 35px, #c25a30 35px 43px, #2288aa 43px 50px, #88aa22 50px 57px, #884422 57px 64px, #336699 64px 71px, #993366 71px 78px, #55aa88 78px 86px, transparent 86px) no-repeat 0 2px / 100% 18px,
+    linear-gradient(90deg, #884422 0 8px, #336699 8px 14px, #669944 14px 21px, #993366 21px 28px, #cc8833 28px 36px, #445599 36px 43px, #aa4455 43px 50px, #55aa88 50px 58px, #c2362f 58px 65px, #228877 65px 72px, #aa6622 72px 80px, #6644aa 80px 87px, transparent 87px) no-repeat 0 27px / 100% 18px,
+    linear-gradient(90deg, #5533aa 0 7px, #aa5533 7px 14px, #33aa55 14px 22px, #3355aa 22px 29px, #aa3355 29px 36px, #55aa33 36px 44px, #8855aa 44px 51px, #aa8855 51px 58px, #cc6633 58px 66px, #336655 66px 73px, #993355 73px 80px, #44aa66 80px 88px, transparent 88px) no-repeat 0 53px / 100% 18px;
+}
+.bookshelf.tall { height: 72%; bottom: 14%; width: 100px; }
+.bookshelf.tall::before {
+  background:
+    linear-gradient(180deg,
+      transparent 0, transparent 14%, #2a1a0e 14%, #2a1a0e calc(14% + 2px),
+      transparent calc(14% + 2px), transparent 28%, #2a1a0e 28%, #2a1a0e calc(28% + 2px),
+      transparent calc(28% + 2px), transparent 42%, #2a1a0e 42%, #2a1a0e calc(42% + 2px),
+      transparent calc(42% + 2px), transparent 57%, #2a1a0e 57%, #2a1a0e calc(57% + 2px),
+      transparent calc(57% + 2px), transparent 71%, #2a1a0e 71%, #2a1a0e calc(71% + 2px),
+      transparent calc(71% + 2px), transparent 85%, #2a1a0e 85%, #2a1a0e calc(85% + 2px),
+      transparent calc(85% + 2px));
+}
+.bookshelf.tall::after {
+  background:
+    linear-gradient(90deg, #c2362f 0 7px, #2266aa 7px 15px, #44aa66 15px 21px, #aa6622 21px 29px, #6644aa 29px 35px, #c25a30 35px 43px, #228877 43px 50px, #993355 50px 58px, #884422 58px 65px, #55aa88 65px 73px, #336699 73px 80px, #cc8833 80px 88px, transparent 88px) no-repeat 0 3% / 100% 12%,
+    linear-gradient(90deg, #884422 0 8px, #336699 8px 14px, #993366 14px 21px, #669944 21px 29px, #cc8833 29px 37px, #445599 37px 44px, #aa4455 44px 52px, #228866 52px 59px, #5533aa 59px 66px, #aa5533 66px 74px, #33aa55 74px 81px, #aa3355 81px 88px, transparent 88px) no-repeat 0 17% / 100% 12%,
+    linear-gradient(90deg, #5533aa 0 7px, #aa5533 7px 14px, #33aa55 14px 22px, #aa3355 22px 29px, #3355aa 29px 36px, #cc6633 36px 44px, #336655 44px 51px, #aa8844 51px 58px, #664422 58px 66px, #226699 66px 73px, #449966 73px 80px, #994433 80px 88px, transparent 88px) no-repeat 0 31% / 100% 12%,
+    linear-gradient(90deg, #aa3333 0 8px, #3366aa 8px 14px, #66aa33 14px 21px, #9933aa 21px 29px, #aa6633 29px 37px, #3399aa 37px 44px, #aa3366 44px 52px, #55aa66 52px 59px, #cc4444 59px 66px, #4466cc 66px 74px, #44cc66 74px 81px, #cc6644 81px 88px, transparent 88px) no-repeat 0 45% / 100% 12%,
+    linear-gradient(90deg, #664422 0 7px, #226699 7px 14px, #449966 14px 21px, #994433 21px 28px, #336644 28px 36px, #993388 36px 43px, #669933 43px 51px, #884466 51px 58px, #c2362f 58px 65px, #2266aa 65px 73px, #44aa66 73px 80px, #aa6622 80px 88px, transparent 88px) no-repeat 0 59% / 100% 12%,
+    linear-gradient(90deg, #cc4444 0 8px, #4466cc 8px 14px, #44cc66 14px 22px, #cc6644 22px 29px, #6644cc 29px 37px, #44ccaa 37px 44px, #cc4488 44px 52px, #88cc44 52px 59px, #553322 59px 66px, #225588 66px 74px, #558822 74px 81px, #885522 81px 88px, transparent 88px) no-repeat 0 73% / 100% 12%,
+    linear-gradient(90deg, #553322 0 7px, #225588 7px 14px, #558822 14px 21px, #885522 21px 29px, #225555 29px 36px, #882255 36px 44px, #558855 44px 51px, #885555 51px 58px, #aa3333 58px 65px, #3366aa 65px 73px, #66aa33 73px 80px, #9933aa 80px 88px, transparent 88px) no-repeat 0 87% / 100% 12%;
+}
+
+/* variantes de monitor */
+.monitor.code::after { background: repeating-linear-gradient(180deg,#66ff9e 0 2px,transparent 2px 6px); }
+.monitor.figma { box-shadow: 0 0 10px rgba(232,82,152,0.4); }
+.monitor.figma::after { background: repeating-linear-gradient(90deg,#e85298 0 6px,transparent 6px 10px), repeating-linear-gradient(180deg,#9b6bff 0 6px,transparent 6px 14px); opacity: 0.7; }
+
+/* --- casas bajas de barrio (UNLaM de noche) --- */
+.house { position: absolute; bottom: 14%; border: 3px solid #0a0814; }
+.house::before { /* techo a dos aguas */
+  content: ""; position: absolute; top: -12px; left: -3px; right: -3px; height: 12px;
+  background: #2f2840; clip-path: polygon(0 100%, 50% 0, 100% 100%);
+}
+
+/* --- datacenter interior --- */
+.dc-wall { position: absolute; top: 0; bottom: 14%; width: 32%; background: linear-gradient(180deg, #0a1828, #0e2238); }
+.dc-wall.left { left: 0; border-right: 3px solid #1d3a55; }
+.dc-wall.right { right: 0; border-left: 3px solid #1d3a55; }
+.dc-floor { position: absolute; left: 0; right: 0; bottom: 14%; height: 4px; background: repeating-linear-gradient(90deg, #1d3a55 0 24px, #0e2238 24px 26px); }
+.dc-airflow { position: absolute; bottom: 14%; width: 60px; height: 50px; background: repeating-linear-gradient(0deg, rgba(43,212,255,0.08) 0 3px, transparent 3px 8px); animation: drift 6s linear infinite; }
+.rack.tall { height: 210px; width: 52px; }
+
+/* --- pumpjack (balancÃ­n petrolero) --- */
+.pumpjack { position: absolute; bottom: 14%; width: 80px; height: 90px; }
+.pumpjack::before { /* base / pedestal */
+  content: ""; position: absolute; bottom: 0; left: 20px; width: 40px; height: 20px;
+  background: #5a5046; border: 3px solid #3a3228;
+}
+.pumpjack::after { /* brazo oscilante */
+  content: ""; position: absolute; bottom: 20px; left: 10px; width: 60px; height: 8px;
+  background: #8a7d6b; border: 3px solid #4a443b; transform-origin: right center;
+  animation: pump 2.4s ease-in-out infinite;
+}
+@keyframes pump { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(12deg); } }
+
+/* cabeza del pumpjack */
+.pumpjack .horse-head { position: absolute; bottom: 40px; left: 4px; width: 20px; height: 14px; background: #6b6256; border: 3px solid #3a3228; }
+
+/* --- estaciÃ³n de servicio --- */
+.gasstation { position: absolute; bottom: 14%; width: 120px; height: 80px; }
+.gasstation::before { /* techo plano */
+  content: ""; position: absolute; top: 0; left: -8px; right: -8px; height: 16px;
+  background: #e8e0d0; border: 4px solid #3a3228; box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+}
+.gasstation::after { /* cuerpo surtidor */
+  content: ""; position: absolute; top: 20px; left: 20px; width: 26px; height: 50px;
+  background: #c2362f; border: 3px solid #7a1d18; box-shadow: 38px 0 0 #c2362f;
+}
+
+/* --- corpo buildings (banco) --- */
+.bldg.corpo { box-shadow: inset 3px 0 0 rgba(255,255,255,0.04), inset -3px 0 0 rgba(0,0,0,0.15); }
+.bldg.corpo::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 2px, transparent 2px 20px); }
+
+/* --- future: sunrise + mar --- */
+.sea.sunrise {
+  position: absolute; left: 0; right: 0; bottom: 12%; height: 24%;
+  background: linear-gradient(180deg, #4a8fb8 0%, #2a6090 40%, #1a4060 100%);
+  overflow: hidden;
+}
+.sea.sunrise::after { content:""; position:absolute; inset:0;
+  background: repeating-linear-gradient(180deg, rgba(255,220,160,0.2) 0 2px, transparent 2px 8px);
+  animation: wave 3s linear infinite;
+}
+.sun-glow {
+  position: absolute; left: 50%; bottom: 28%; transform: translateX(-50%);
+  width: 160px; height: 80px; z-index: 0;
+  background: radial-gradient(circle at 50% 100%, #ffd45e 0 20%, #ff9e5e 20% 40%, rgba(255,150,80,0.4) 40% 60%, transparent 60%);
+  box-shadow: 0 0 60px 20px rgba(255,200,120,0.4);
+}
+
+/* pipeline grueso (cruzando pantalla) */
+.pipe.thick { height: 14px; background: repeating-linear-gradient(90deg,#6b6256 0 20px,#5a5046 20px 22px); border-width: 3px; box-shadow: 0 4px 0 rgba(0,0,0,0.25); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lantern, .bird, .cloud, .gear, .vsign, .neon-sign, .zzz, .train__headlight, .pumpjack::after { animation: none; }
+}
+
+/* ============================================================
+   SCROLL HINT
+   ============================================================ */
+.scroll-hint {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 35;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  transition: opacity 0.4s; pointer-events: none;
+}
+.scroll-hint.is-hidden { opacity: 0; }
+.scroll-hint__text { font-family: "Press Start 2P"; font-size: 8px; color: #fff; text-shadow: 2px 2px 0 rgba(0,0,0,0.5); opacity: 0.8; }
+.scroll-hint__arrow { width: 14px; height: 14px; border-right: 3px solid #fff; border-bottom: 3px solid #fff; transform: rotate(45deg); animation: bounce 1.2s steps(3) infinite; opacity: 0.8; }
+@keyframes bounce { 0%,100% { transform: rotate(45deg) translate(0,0); } 50% { transform: rotate(45deg) translate(4px,4px); } }
+@media (prefers-reduced-motion: reduce) { .scroll-hint__arrow { animation: none; } }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 880px) {
+  .route {
+    top: auto; bottom: 0; left: 0; right: 0; transform: none; width: 100%;
+    display: flex; align-items: center; justify-content: center;
+    padding: 6px 8px;
+    background: rgba(10,13,20,0.7);
+    backdrop-filter: blur(4px);
+  }
+  .route__list { display: flex; gap: 2px; }
+  .route__list::before { left: 0; right: 0; top: 50%; bottom: auto; height: 2px; width: auto;
+    background: rgba(255,255,255,0.12); }
+  .route__item { flex-direction: column; padding: 2px 8px; gap: 2px; }
+  .route__item:hover .route__label { opacity: 1; }
+  .route__label { font-size: 10px; text-align: center; max-width: 60px; opacity: 0; }
+  .route__item.is-active .route__label { opacity: 1; }
+  .panel { padding: 18px; }
+  .station__ground { height: 16%; }
+  .lang-toggle { top: 12px; }
+}

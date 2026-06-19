@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ing. Donatella Fragassi </title>
+  <meta name="description" content="Portfolio interactivo pixel art de Donatella Fragassi, Software Engineer. Un recorrido en el tren Enoden por mi carrera." />
+
+  <!-- Fuentes pixel + japonesa -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=DotGothic16&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css?v=46" />
+</head>
+<body>
+  <!-- Filtro SVG de pixelado (se aplica al cielo, parallax y escenas;
+       NO a los carteles ni al texto de UI) -->
+  <svg class="svg-defs" aria-hidden="true" focusable="false">
+    <filter id="pixelate" x="0" y="0" width="100%" height="100%">
+      <feFlood x="2" y="2" width="1" height="1" />
+      <feComposite width="5" height="5" />
+      <feTile result="tile" />
+      <feComposite in="SourceGraphic" in2="tile" operator="in" />
+      <feMorphology operator="dilate" radius="2.5" />
+    </filter>
+  </svg>
+
+  <!-- Cielo / atmÃ³sfera de fondo (su color se interpola por scroll) -->
+  <div class="sky" id="sky" aria-hidden="true">
+    <div class="sky__stars" id="skyStars"></div>
+    <div class="sky__sun" id="skySun"></div>
+    <div class="sky__moon" id="skyMoon"></div>
+  </div>
+
+  <!-- Capa lejana de parallax (montaÃ±as / horizonte) -->
+  <div class="far" id="far" aria-hidden="true"></div>
+
+  <!-- Canvas de ambiente: pÃ©talos de cerezo / partÃ­culas -->
+  <canvas class="ambient" id="ambient" aria-hidden="true"></canvas>
+
+  <!-- Toggle de idioma -->
+  <button class="lang-toggle" id="langToggle" type="button" aria-label="Cambiar idioma / Switch language">
+    <span class="lang-toggle__opt is-active" data-lang="es">ES</span>
+    <span class="lang-toggle__sep">/</span>
+    <span class="lang-toggle__opt" data-lang="en">EN</span>
+  </button>
+
+  <!-- Mapa de ruta (sidebar) -->
+  <nav class="route" id="route" aria-label="Mapa de estaciones">
+    <p class="route__title" id="routeTitle">RUTA ENODEN</p>
+    <ol class="route__list" id="routeList"></ol>
+  </nav>
+
+  <!-- Recorrido del tren -->
+  <div class="journey" id="journey">
+    <div class="journey__sticky" id="sticky">
+      <div class="world" id="world">
+        <!-- rieles de skills -->
+        <div class="rails" id="rails" aria-hidden="true"></div>
+        <!-- estaciones (inyectadas por JS) -->
+        <div class="stations" id="stations"></div>
+        <!-- tren -->
+        <div class="train" id="train" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicador de scroll inicial -->
+  <div class="scroll-hint" id="scrollHint">
+    <span class="scroll-hint__text" id="scrollHintText">scrolleÃ¡ para comenzar el viaje</span>
+    <span class="scroll-hint__arrow"></span>
+  </div>
+
+  <script src="data/content.js?v=46"></script>
+  <script src="script.js?v=46"></script>
+</body>
+</html>
