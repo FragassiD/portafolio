@@ -51,6 +51,8 @@
     return e;
   }
 
+  
+
   /* ============================================================
      ESCENOGRAFÃA por tema (pixel art CSS)
      ============================================================ */
@@ -804,6 +806,31 @@
         o.classList.toggle("is-active", o.dataset.lang === lang));
       applyLang();
     });
+
+    // reproductor de música (sin autoplay ni triggers automáticos)
+    const audioTrack = $("#audioTrack");
+    const playBtn = $("#playBtn");
+
+    function syncMusicButton() {
+      playBtn.textContent = audioTrack.paused ? "▶" : "⏸";
+    }
+
+    audioTrack.addEventListener("play", syncMusicButton);
+    audioTrack.addEventListener("pause", syncMusicButton);
+    audioTrack.addEventListener("ended", syncMusicButton);
+
+    playBtn.addEventListener("click", () => {
+      if (audioTrack.paused) audioTrack.play();
+      else audioTrack.pause();
+    });
+
+    // pequeño cartel flotante junto a los botones que dura 5s
+    const musicHint = $("#musicHint");
+    if (musicHint) {
+      // aseguramos que esté visible y se oculte después de 5s
+      musicHint.classList.remove('hidden');
+      setTimeout(() => musicHint.classList.add('hidden'), 5000);
+    }
 
     applyLang();
     setMode();

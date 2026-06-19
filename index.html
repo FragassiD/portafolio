@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=DotGothic16&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="styles.css?v=46" />
+  <link rel="stylesheet" href="styles.css?v=50" />
 </head>
 <body>
   <!-- Filtro SVG de pixelado (se aplica al cielo, parallax y escenas;
@@ -46,6 +46,19 @@
     <span class="lang-toggle__opt" data-lang="en">EN</span>
   </button>
 
+  <!-- Reproductor de música -->
+  <div class="music-player" id="musicPlayer">
+    <audio id="audioTrack" preload="metadata" loop>
+      <source src="Naruto - Ending 1 Wind - Crunchyroll (128k).mp3" type="audio/mpeg">
+      Tu navegador no soporta el elemento de audio.
+    </audio>
+    <div class="music-player__controls">
+      <button class="music-btn play-btn" id="playBtn" title="Play/Pause">▶</button>
+      <div class="music-player__info" id="musicInfo">Wind</div>
+    </div>
+    <div class="music-hint" id="musicHint">Activa música</div>
+  </div>
+
   <!-- Mapa de ruta (sidebar) -->
   <nav class="route" id="route" aria-label="Mapa de estaciones">
     <p class="route__title" id="routeTitle">RUTA ENODEN</p>
@@ -72,7 +85,7 @@
     <span class="scroll-hint__arrow"></span>
   </div>
 
-  <script src="data/content.js?v=46"></script>
-  <script src="script.js?v=46"></script>
+  <script src="data/content.js?v=50"></script>
+  <script src="script.js?v=50"></script>
 </body>
 </html>

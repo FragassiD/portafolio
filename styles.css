@@ -144,6 +144,78 @@ a { color: inherit; }
 .lang-toggle__sep { opacity: 0.5; }
 
 /* ============================================================
+   REPRODUCTOR DE MÚSICA
+   ============================================================ */
+.music-player {
+  position: fixed; top: 16px; left: 16px; z-index: 50;
+  background: var(--enoden-green-dk);
+  border: var(--pixel) solid var(--ink);
+  box-shadow: inset 0 0 0 2px var(--enoden-green), 4px 4px 0 rgba(0,0,0,0.4);
+  padding: 10px 12px;
+  display: flex; align-items: center; gap: 8px;
+  font-family: "Press Start 2P", monospace; font-size: 11px;
+  color: var(--cream);
+}
+#audioTrack { display: none; }
+.music-player__controls {
+  display: flex; align-items: center; gap: 8px;
+}
+.music-btn {
+  background: var(--enoden-green);
+  border: var(--pixel) solid var(--ink);
+  color: var(--cream);
+  font-family: "Press Start 2P", monospace; font-size: 10px;
+  cursor: pointer;
+  padding: 4px 8px;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+  transition: all 0.1s;
+}
+.music-btn:hover {
+  background: var(--enoden-green-lt);
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.4);
+}
+.music-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+.music-player__info {
+  min-width: 60px;
+  color: #ffe9a8;
+  text-shadow: 0 0 4px #ffcf5e;
+  font-size: 9px;
+}
+
+.music-hint {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translate(12px, -50%) scale(1);
+  background: linear-gradient(180deg, rgba(20,20,20,0.96), rgba(0,0,0,0.85));
+  color: #fff; padding: 10px 14px; border-radius: 14px;
+  font-size: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  opacity: 1; transition: opacity 0.25s ease, transform 0.25s cubic-bezier(.2,.9,.2,1);
+  pointer-events: none;
+  z-index: 60;
+}
+.music-hint.hidden { opacity: 0; pointer-events: none; }
+
+.music-hint::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0; height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid rgba(0,0,0,0.85);
+}
+.music-hint.hidden { transform: translate(4px, -50%) scale(0.96); }
+
+/* Botón inline para activar sonido si autoplay está bloqueado */
+/* enable sound CTA removed */
+
+/* ============================================================
    MAPA DE RUTA (sidebar)
    ============================================================ */
 .route {
