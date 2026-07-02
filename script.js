@@ -424,7 +424,7 @@
     // descripciÃ³n
     if (st.description) {
       const d = el("p", "panel__desc");
-      reg(d, st.description);
+      reg(d, st.description, "html");
       p.appendChild(d);
     }
 
